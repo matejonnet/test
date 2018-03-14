@@ -1,2 +1,2 @@
 # Hello Major Tom
-Hi Ground controll!
+Hi Ground controll! I took the pills and put me helmet on. 
