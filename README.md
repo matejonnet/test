@@ -9,3 +9,5 @@ GC: Tom! Are you leaving the capsule already ?
 MT: Yap, I'm on my way out of the tin to see the stars.
 
 MT: Our blue plannet looks nice!
+
+MT: Far away from home, I don't know where to go.
