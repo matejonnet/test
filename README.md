@@ -13,3 +13,5 @@ MT: Our blue plannet looks nice!
 MT: Far away from home, I don't know where to go.
 
 GC: Tom, can you hear me!?
+
+GC: Tom, can you hear me ... TOM!?
