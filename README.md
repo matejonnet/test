@@ -17,3 +17,5 @@ GC: Tom, can you hear me!?
 GC: Tom, can you hear me ... TOM!?
 
 MT: This time the planet was close, after 33.9 million miles I landed on the Mars.
+
+GC: Did they close the Mars :o ?
