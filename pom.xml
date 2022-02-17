@@ -4,8 +4,19 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.github.matejonnet</groupId>
     <artifactId>test</artifactId>
-    <version>1.0</version>
+    <version>1.0.0</version>
     <packaging>jar</packaging>
+
+    <name>test</name>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.github.matejonnet</groupId>
+            <artifactId>alignment-preference-test-dependency</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+    </dependencies>
+
 
 </project>
 
