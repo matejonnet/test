@@ -11,14 +11,16 @@ RUN mkdir -p /root/project /root/software/settings /original-content/marker
 COPY . /root/project/workspace/
 # RUN /root/run-build.sh
 RUN <<EOF
-echo "Running build ...."
+echo "Running build ..."
+cd /var/workdir/
 echo "pwd: $(pwd)"
-echo "ls: $(ls -la)"
-echo "ls: $(ls -la /root/project/artifacts/)"
+echo "find . : $(find .)"
+cd /var/workdir/source
+echo "pwd: $(pwd)"
+echo "find . : $(find .)"
 curl -v http://maven.repository.redhat.com/ga/org/jboss/el/jboss-el/maven-metadata.xml | tee /root/project/artifacts/fake-artifact.txt
-echo "ls: $(ls -la)"
-echo "ls: $(ls -la /root/project/artifacts/)"
+echo "find . : $(find .)"
 EOF
 
-FROM scratch
-COPY --from=0 /root/project/artifacts /root/artifacts
+# FROM scratch
+# COPY --from=0 /root/project/artifacts /root/artifacts
