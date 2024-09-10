@@ -11,8 +11,8 @@ RUN mkdir -p /root/project /root/software/settings /original-content/marker
 COPY . /root/project/workspace/
 # RUN /root/run-build.sh
 RUN <<EOF
-echo "Running build ..."
-echo "PWD: $(PWD)"
+echo "Running build .."
+echo "pwd: $(pwd)"
 echo "ls: $(ls -la)"
 curl -v http://maven.repository.redhat.com/ga/org/jboss/el/jboss-el/maven-metadata.xml | tee fake-artifact.txt
 echo "ls: $(ls -la)"
