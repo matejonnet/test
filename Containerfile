@@ -1,4 +1,4 @@
-FROM quay.io/mlazar_konflux/jvm-builder-unshare
+FROM quay.io/mlazar_konflux/jvm-builder-unshare:dev
 USER 0
 WORKDIR /root
 RUN mkdir -p /root/project /root/software/settings /original-content/marker
