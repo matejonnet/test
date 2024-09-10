@@ -16,6 +16,7 @@ echo "pwd: $(pwd)"
 echo "find . : $(find .)"
 #curl -v http://maven.repository.redhat.com/ga/org/jboss/el/jboss-el/maven-metadata.xml | tee /root/project/artifacts/fake-artifact.txt
 export JAVA_HOME=/etc/alternatives/java_sdk_openjdk
+cd /root/project/workspace/
 mvn install -Dmaven.test.skip=true
 echo "find . : $(find .)"
 EOF
