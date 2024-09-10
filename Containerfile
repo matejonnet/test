@@ -12,8 +12,6 @@ COPY . /root/project/workspace/
 # RUN /root/run-build.sh
 RUN <<EOF
 #!/bin/bash
-set -e
-
 # echo "Starting unshare proxy ..."
 # java -jar /opt/unshare-proxy/client/quarkus-run.jar &
 # sleep 5 #TODO ping the client to check if it is up
