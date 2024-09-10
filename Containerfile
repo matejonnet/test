@@ -11,6 +11,7 @@ RUN mkdir -p /root/project /root/software/settings /original-content/marker
 COPY . /root/project/workspace/
 # RUN /root/run-build.sh
 RUN <<EOF
+set -x
 echo "Running build ..."
 echo "pwd: $(pwd)"
 echo "find . : $(find .)"
