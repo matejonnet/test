@@ -12,7 +12,10 @@ COPY . /root/project/workspace/
 # RUN /root/run-build.sh
 RUN <<EOF
 echo "Running build ..."
-curl -v http://maven.repository.redhat.com/ga/org/jboss/el/jboss-el/maven-metadata.xml > fake-artifact.txt
+echo "PWD: $(PWD)"
+echo "ls: $(ls -la)"
+curl -v http://maven.repository.redhat.com/ga/org/jboss/el/jboss-el/maven-metadata.xml | tee fake-artifact.txt
+echo "ls: $(ls -la)"
 EOF
 
 FROM scratch
