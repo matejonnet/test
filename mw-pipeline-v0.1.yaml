@@ -1,0 +1,132 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  annotations:
+  name: mw-pipeline
+  namespace: pnc-devel-tenant
+spec:
+  params:
+    - name: URL
+      description: Repository URL to clone from
+      type: string
+      default: git@github.com:matejonnet/test.git
+    - name: REVISION
+      description: 'Revision to checkout. (branch, tag, sha, ref, etc...)'
+      type: string
+      default: main
+    - name: BUILD_SCRIPT
+      description: 'The build script to embed with the Containerfile'
+      type: string
+      default: | 
+        date
+
+    # - name: BUILD_TOOLS
+    #   description: 'CSV list of tools and versions to install. eg. java:21,maven:3.6.3'
+    #   type: string
+
+    - name: MVN_REPO_DEPLOY_URL
+      description: Maven repository to deploy to
+      type: string
+      default: http://indyhost/ #TODO remove default
+    - name: MVN_REPO_DEPENDENCIES_URL
+      description: Maven repository to get dependencies from
+      type: string
+    - name: MVN_TOKEN
+      type: string
+    - name: BUILD_ID
+      type: string
+  workspaces:
+    - name: source
+      description: Workspace containing the source code
+
+    - name: ssh-directory
+      # configMap:
+      #   name: ssh-directory
+  tasks:
+    - name: git-clone
+      params:
+        - name: url
+          value: $(params.URL)
+        - name: revision
+          value: $(params.REVISION)
+        - name: verbose
+          value: true
+        - name: subdirectory
+          value: ''
+      taskRef:
+        kind: Task
+        name: git-clone
+      workspaces:
+        - name: output
+          workspace: source
+        - name: ssh-directory
+          workspace: ssh-directory
+
+    - name: pre-build
+      runAfter:
+        - git-clone
+      params:
+        - name: IMAGE_URL
+          value: 'quay.io/mlazar_konflux/trusted-source-$(context.pipelineRun.name):dev'
+        - name: NAME
+          value: $(context.pipelineRun.name)
+        - name: BUILD_SCRIPT
+          value: $(params.BUILD_SCRIPT)
+        - name: RECIPE_IMAGE
+          description: The image from the build recipe to use #TODO build environment image?
+          default: "quay.io/redhat-user-workloads/konflux-jbs-pnc-tenant/jvm-build-service-builder-images/ubi8:67236e7041a57cd8e31a6f890b0155bc0a1c1700"
+        - name: BUILD_TOOL
+          description: The build tool to use (ant, gradle, maven, sbt).
+          default: "maven"
+        - name: BUILD_TOOL_VERSION
+          description: The build tool version to use (e.g. 3.9.5)
+        - name: JAVA_VERSION
+          description: Java version to use (7, 8, 9, 11, 17, 21, 22, 23)
+        - name: BUILD_SCRIPT
+          description: The build script to embed with the Containerfile
+      taskRef:
+        kind: Task
+        name: pre-build-minimal
+      workspaces:
+        - name: source
+          workspace: source
+    
+    - name: buildah-oci-ta
+      runAfter:
+        - pre-build-minimal
+      params:
+        - name: SOURCE_ARTIFACT
+          value: $(tasks.pre-build-minimal.results.PRE_BUILD_IMAGE_DIGEST)
+        - name: HERMETIC
+          value: false
+        - name: IMAGE # output image
+          value: quay.io/mlazar_konflux/build-$(context.pipelineRun.name):dev
+        - name: DOCKERFILE # local path to the containerfile
+          value: .jbs/Containerfile
+        - name: MVN_REPO_DEPENDENCIES_URL
+          value: $(params.MVN_REPO_DEPENDENCIES_URL) #TODO add to prebuild and bake into the Containerfile
+        - name: MVN_TOKEN
+          value: $(params.MVN_TOKEN)
+        - name: BUILD_ID #TODO add to prebuild and bake into the Containerfile
+          value: $(params.BUILD_ID)
+        - name: BUILD_ARGS  #TODO this should be baked in the OCI source image
+          value: PROXY_URL=$(params.MVN_REPO_DEPENDENCIES_URL) accessToken=$(params.MVN_TOKEN)
+      taskRef:
+        kind: Task
+        name: buildah-oci-ta
+
+    - name: maven-deployment
+      runAfter:
+        - buildah-oci-ta
+      params:
+        - name: IMAGE_URL
+          value: $(tasks.buildah-oci-ta.results.IMAGE_URL)
+        - name: IMAGE_DIGEST
+          value: $(tasks.buildah-oci-ta.results.IMAGE_DIGEST)
+        - name: MVN_REPO
+          value: $(params.MVN_REPO_DEPLOY_URL)
+        - name: MVN_TOKEN
+          value: $(params.MVN_TOKEN)
+      taskRef:
+        kind: Task
+        name: maven-deployment

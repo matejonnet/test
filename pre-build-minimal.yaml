@@ -1,0 +1,81 @@
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: pre-build-minimal
+  annotations:
+    tekton.dev/pipelines.minVersion: 0.12.1
+    tekton.dev/tags: image-build, konflux
+  labels:
+    app.kubernetes.io/version: "0.1"
+    build.appstudio.redhat.com/build_type: docker
+spec:
+  description: |-
+    Sets up pre-build running the preprocessor, pushing the source and creating the OCI image.
+  params:
+    - name: IMAGE_URL
+      description: URL of the OCI image to use.
+      type: string
+    - name: NAME
+      description: Name of the pipeline run (i.e. unique dependency build name)
+      type: string
+      default: 
+    - name: ORAS_OPTIONS #TODO what's the use case for this param?
+      description: Optional environment variable string for build-trusted-artifacts
+      type: string
+      default: ""
+    - name: BUILD_PLUGINS #TODO what's the use case for this param?
+      type: string
+      default: ""
+    - name: RECIPE_IMAGE #TODO is this a build environment image?
+      description: The image from the build recipe to use
+    - name: BUILD_TOOL
+      description: The build tool to use (ant, gradle, maven, sbt).
+      default: "maven"
+    - name: BUILD_TOOL_VERSION
+      description: The build tool version to use (e.g. 3.9.5)
+    - name: JAVA_VERSION
+      description: Java version to use (7, 8, 9, 11, 17, 21, 22, 23)
+    - name: BUILD_SCRIPT
+      description: The build script to embed with the Containerfile
+    - name: JVM_BUILD_SERVICE_REQPROCESSOR_IMAGE #TODO do we need this parametrized ?
+      description: Name of the processor image. Useful to override for development.
+      type: string
+      default: "quay.io/redhat-appstudio/hacbs-jvm-build-request-processor:dev"
+  results:
+    - name: PRE_BUILD_IMAGE_DIGEST
+      description: Digest of the image just built
+  workspaces:
+    - name: source
+      description: The git repo will be cloned onto the volume backing this Workspace.
+      mountPath: /var/workdir
+    # - name: tls
+  steps:
+    - name: preprocessor
+      # image: quay.io/redhat-appstudio/hacbs-jvm-build-request-processor:dev
+      image: $(params.JVM_BUILD_SERVICE_REQPROCESSOR_IMAGE)
+      securityContext:
+        runAsUser: 0
+      computeResources:
+        limits:
+          cpu: 300m
+          memory: 512Mi
+        requests:
+          cpu: 10m
+          memory: 512Mi
+      script: |
+        /opt/jboss/container/java/run/run-java.sh $(params.BUILD_TOOL)-prepare --java-version=$(params.JAVA_VERSION) --build-tool-version=$(params.BUILD_TOOL_VERSION) --recipe-image=$(params.RECIPE_IMAGE) --request-processor-image=$(params.JVM_BUILD_SERVICE_REQPROCESSOR_IMAGE) --disabled-plugins=$(params.BUILD_PLUGINS) $(workspaces.source.path)/source
+      env:
+        - name: BUILD_SCRIPT
+          value: $(params.BUILD_SCRIPT) 
+    - name: create-pre-build-image
+      image: quay.io/redhat-appstudio/build-trusted-artifacts:latest@sha256:a83c92fc0a1e2c785937c6612dc8c8237818535543f00ecaf6b3b77a35f76259
+      # The build-trusted-artifacts container doesn't handle REGISTRY_TOKEN but the actual .docker/config.json.
+      # Setting ORAS_OPTIONS to ensure the archive is compatible with jib (for OCIRepositoryClient) (to be removed)
+      script: |
+        echo "Creating pre-build-image archive with ORAS_OPTIONS $ORAS_OPTIONS"
+        export ORAS_OPTIONS="$ORAS_OPTIONS --image-spec=v1.0 --artifact-type application/vnd.oci.image.config.v1+json"
+        create-archive --store $(params.IMAGE_URL) $(results.PRE_BUILD_IMAGE_DIGEST.path)=$(workspaces.source.path)/source
+      env:
+        - name: IMAGE_URL
+          value: $(params.IMAGE_URL)
