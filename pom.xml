@@ -9,14 +9,6 @@
 
     <name>test</name>
 
-    <dependencies>
-        <dependency>
-            <groupId>com.github.matejonnet</groupId>
-            <artifactId>alignment-preference-test-dependency</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-    </dependencies>
-
 
 </project>
 
